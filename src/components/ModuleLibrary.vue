@@ -34,23 +34,34 @@ export default {
 <style scoped>
 .library {
   width: 200px;
-  background-color: #f2f2f2;
+  background-color: var(--lib-bg);
+  color: var(--text-color);
   padding: 1em;
+  height: 100%;
   overflow-y: auto;
 }
+
 .block-list {
   display: flex;
   flex-direction: column;
   gap: 0.5em;
 }
+
 .block-item {
-  background-color: #ddd;
+  background-color: var(--bg-block);
+  border: 1px solid var(--block-border);
+  color: var(--text-color);
   padding: 0.5em;
   cursor: pointer;
   border-radius: 4px;
-  transition: background 0.2s;
+  text-align: center;
+  font-weight: 500;
+  transition: background 0.2s, border 0.2s;
 }
+
 .block-item:hover {
-  background-color: #ccc;
+  background-color: var(--hover-bg);
+  border: 1px solid var(--block-border); /* ← hover 時也保留邊框 */
 }
 </style>
+

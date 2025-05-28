@@ -1,15 +1,13 @@
 <template>
   <div class="canvas" @mousedown="startDrag" @mousemove="onDrag" @mouseup="stopDrag">
-    <div
-      class="block"
-      v-for="(block, index) in blocks"
-      :key="index"
-      :style="{
-        left: block.x + 'px',
-        top: block.y + 'px'
-      }"
-      @mousedown.stop="selectBlock(index, $event)"
-    >
+        <div
+        class="block"
+        v-for="(block, index) in blocks"
+        :key="index"
+        :style="{ left: block.x + 'px', top: block.y + 'px' }"
+        :class="{ selected: index === draggingIndex }"
+        @mousedown.stop="selectBlock(index, $event)"
+        >
       {{ block.prompt }} ({{ block.weight }})
     </div>
   </div>
@@ -55,22 +53,36 @@ export default {
 <style scoped>
 .canvas {
   flex: 1;
+  height: 100%;
   position: relative;
-  background-color: #ffffff;
-  border: 1px solid #ccc;
   overflow: hidden;
+  background-color: var(--bg-canvas);
 }
+
 .block {
+  background-color: var(--bg-block);
+  color: var(--text-color);
+  border: 1px solid var(--block-border);
   position: absolute;
-  background-color: #e0e0e0;
-  border: 1px solid #aaa;
-  padding: 0.5em;
+  left: 0;
+  top: 0;
   cursor: move;
-  border-radius: 4px;
   user-select: none;
-  transition: box-shadow 0.2s;
 }
+
+.block.selected {
+  border: 2px solid var(--selected-border);
+}
+
 .block:hover {
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+  box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.6);
 }
+
+.block:active {
+  cursor: grabbing;
+  opacity: 0.85;
+  transform: scale(1.02);
+}
+
+
 </style>

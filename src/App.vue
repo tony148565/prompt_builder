@@ -6,6 +6,7 @@
       @load-session="loadSession"
       @clear-workspace="clearWorkspace"
       @export-prompt="exportPrompt"
+      @toggle-theme="toggleTheme"
     />
     <div class="main-layout">
       <ModuleLibrary @add-block="addBlock" />
@@ -26,10 +27,21 @@ export default {
   data() {
     return {
       blocks: [],
-      selectedBlock: null
+      selectedBlock: null,
+      theme: 'light'
     }
   },
+  mounted() {
+    const saved = localStorage.getItem('theme') || 'light'
+    this.theme = saved
+    document.body.className = saved
+  },
   methods: {
+    toggleTheme() {
+      this.theme = this.theme === 'light' ? 'dark' : 'light'
+      document.body.className = this.theme
+      localStorage.setItem('theme', this.theme)
+    },
     newSession() {
       this.blocks = []
       this.selectedBlock = null
@@ -72,15 +84,27 @@ export default {
 </script>
 
 <style scoped>
-#app {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
+
 .main-layout {
   flex: 1;
+  height: 100%;
   display: flex;
-  height: 100%; /* ← 這很重要 */
   overflow: hidden;
 }
+
+.main-layout > *:nth-child(1) {
+  width: 220px; /* ModuleLibrary 固定寬度 */
+  min-width: 200px;
+}
+
+.main-layout > *:nth-child(2) {
+  flex: 1; /* FreeCanvas 彈性填滿 */
+}
+
+.main-layout > *:nth-child(3) {
+  width: 260px; /* DetailPanel 固定寬度 */
+  min-width: 240px;
+  border-left: 1px solid var(--block-border); /* 可選，視覺分隔 */
+}
+
 </style>

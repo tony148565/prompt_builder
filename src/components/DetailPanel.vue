@@ -41,31 +41,52 @@ export default {
 
 <style scoped>
 .detail-panel {
+  height: 100%;
   width: 250px;
-  background-color: #f9f9f9;
+  background-color: var(--panel-bg);
+  color: var(--text-color);
   padding: 1em;
-  border-left: 1px solid #ccc;
+  border-left: 1px solid var(--block-border);
+  overflow-y: auto;
 }
+
+h3 {
+  font-size: 1.1em;
+  margin-bottom: 1em;
+  font-weight: 600;
+  border-bottom: 1px solid var(--block-border);
+  padding-bottom: 0.5em;
+}
+
 .form-group {
   margin-bottom: 1em;
 }
+
 input[type="text"],
 input[type="number"] {
   width: 100%;
   padding: 0.4em;
-  border: 1px solid #ccc;
+  border: 1px solid var(--block-border);
   border-radius: 4px;
   font-size: 1em;
+  background-color: var(--bg-block);
+  color: var(--text-color);
 }
+
 button {
+  width: 100%;
   padding: 0.5em 1em;
   background-color: #4caf50;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s;
 }
+
 button:hover {
   background-color: #45a049;
 }
 </style>
+

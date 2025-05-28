@@ -5,6 +5,7 @@
       <button @click="$emit('save-session')">💾 儲存</button>
       <button @click="$emit('load-session')">📂 載入</button>
       <button @click="$emit('clear-workspace')">🗑 清空</button>
+      <button @click="$emit('toggle-theme')">切換主題 🌗</button>
     </div>
     <div class="right">
       <button @click="$emit('export-prompt')">📤 匯出 Prompt</button>
