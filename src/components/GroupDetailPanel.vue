@@ -4,7 +4,12 @@
 
     <div class="form-group">
       <label>群組名稱</label>
-      <input type="text" v-model="localBlock.groupName" @input="emitUpdate" />
+      <input
+        type="text"
+        v-model="localBlock.groupName"
+        :readonly="localBlock.groupType === 'merge'"
+        @input="emitUpdate"
+      />
     </div>
 
     <div class="form-group">
@@ -15,9 +20,15 @@
     <div class="form-group">
       <label>包含的模組</label>
       <ul>
-        <li v-for="prompt in localBlock.children" :key="prompt">
-          {{ prompt }}
-          <button class="remove-btn" @click="removeChild(prompt)">❌</button>
+        <li v-for="(child, index) in localBlock.children" :key="child.prompt">
+          <input
+            type="text"
+            v-model="child.prompt"
+            @input="onChildEdit"
+          />
+          <button @click="moveUp(index)" :disabled="index === 0">⬆️</button>
+          <button @click="moveDown(index)" :disabled="index === localBlock.children.length - 1">⬇️</button>
+          <button class="remove-btn" @click="removeChild(child)">❌</button>
         </li>
       </ul>
     </div>
@@ -36,23 +47,86 @@ export default {
       localBlock: JSON.parse(JSON.stringify(this.block))
     };
   },
-  watch: {
-    block(newVal) {
-      this.localBlock = JSON.parse(JSON.stringify(newVal));
-    }
-  },
   methods: {
     save() {
       this.$emit('save', this.localBlock);
     },
-    removeChild(prompt) {
-      this.localBlock.children = this.localBlock.children.filter(p => p !== prompt);
+    removeChild(child) {
+      this.localBlock.children = this.localBlock.children.filter(c => c.prompt !== child.prompt);
       this.emitUpdate();
-      this.$emit('remove-child', prompt);
+      this.$emit('remove-child', child.prompt); // ✅ only prompt
     },
     emitUpdate() {
       this.$emit('update', this.localBlock);
+    },
+    moveUp(index) {
+      if (index > 0) {
+        const tmp = this.localBlock.children[index];
+        this.localBlock.children.splice(index, 1);
+        this.localBlock.children.splice(index - 1, 0, tmp);
+        this.emitUpdate();
+      }
+    },
+    moveDown(index) {
+      if (index < this.localBlock.children.length - 1) {
+        const tmp = this.localBlock.children[index];
+        this.localBlock.children.splice(index, 1);
+        this.localBlock.children.splice(index + 1, 0, tmp);
+        this.emitUpdate();
+      }
+    },
+    onChildEdit() {
+      if (this.localBlock.groupType === 'merge') {
+        this.localBlock.groupName = this.localBlock.children.map(c => c.prompt).join(' ');
+      }
+      this.emitUpdate();
+    }
+  },
+  watch: {
+    block(newBlock) {
+      this.localBlock = JSON.parse(JSON.stringify(newBlock));
     }
   }
 };
 </script>
+
+<style scoped>
+.detail-panel {
+  height: 100%;
+  width: 250px;
+  background-color: var(--panel-bg);
+  padding: 1em;
+  border-left: 1px solid var(--block-border);
+}
+.form-group {
+  margin-bottom: 1em;
+}
+input[type="text"] {
+  width: 100%;
+  padding: 0.4em;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1em;
+  margin-bottom: 0.2em;
+}
+button {
+  padding: 0.3em 0.5em;
+  margin-right: 0.2em;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8em;
+}
+button:hover {
+  background-color: #45a049;
+}
+.remove-btn {
+  background-color: #c0392b;
+  color: white;
+}
+.remove-btn:hover {
+  background-color: #e74c3c;
+}
+</style>

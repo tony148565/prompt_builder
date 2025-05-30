@@ -24,7 +24,7 @@
 export default {
   name: 'FreeCanvas',
   props: ['blocks', 'selectedBlock'],
-  emits: ['select'],
+  emits: ['select', 'update-position'],
   data() {
     return {
       draggingId: null,
@@ -49,16 +49,15 @@ export default {
       };
     },
     select(block, event) {
-      const rect = event.currentTarget.getBoundingClientRect();
-      this.offsetX = event.clientX - rect.left;
-      this.offsetY = event.clientY - rect.top;
+      const blockEl = event.currentTarget.getBoundingClientRect();
+      this.offsetX = event.clientX - blockEl.left;
+      this.offsetY = event.clientY - blockEl.top;
       this.draggingId = block.id;
       this.isDragging = true;
       this.canvasRect = this.$el.getBoundingClientRect();
       this.$emit('select', block);
     },
     startDrag() {},
-
     onDrag(event) {
       if (this.isDragging && this.draggingId && this.canvasRect) {
         const block = this.blocks.find(b => b.id === this.draggingId);
@@ -68,23 +67,24 @@ export default {
         }
       }
     },
-
     endDrag() {
       if (!this.draggingId) return;
-
       const draggedIndex = this.blocks.findIndex(b => b.id === this.draggingId);
+      if (draggedIndex === -1) return;
       const draggedBlock = this.blocks[draggedIndex];
       if (!draggedBlock || draggedBlock.type === 'group') {
         this.draggingId = null;
         return;
       }
 
+      let addedToGroup = false;
       for (const group of this.groupBlocks) {
         if (this.isInside(draggedBlock, group)) {
-          if (!group.children.includes(draggedBlock.prompt)) {
-            group.children.push(draggedBlock.prompt);
-            this.blocks.splice(draggedIndex, 1);
-            this.$emit('select', group); // refresh panel
+          const exists = group.children.some(c => c.prompt === draggedBlock.prompt);
+          if (!exists) {
+            group.children.push({ prompt: draggedBlock.prompt }); // ✅ only prompt
+            this.blocks.splice(draggedIndex, 1); // ❌ destroy original
+            addedToGroup = true;
           }
           break;
         }
@@ -92,7 +92,6 @@ export default {
 
       this.draggingId = null;
     },
-
     isInside(block, group) {
       const padding = 10;
       return (

@@ -20,7 +20,7 @@ export default {
     GroupDetailPanel
   },
   props: ['block', 'allBlocks'],
-  emits: ['update', 'delete-block'],
+  emits: ['update', 'delete-block', 'remove-child'],
   methods: {
     onUpdate(updatedBlock) {
       this.$emit('update', updatedBlock);

@@ -18,7 +18,6 @@
         @delete-block="deleteBlock"
         @remove-child="onRemoveChild"
       />
-
     </div>
   </div>
 </template>
@@ -70,7 +69,7 @@ export default {
     },
     exportPrompt() {
       const text = this.blocks
-        .filter(b => b.type !== 'group') // 只匯出 prompt block
+        .filter(b => b.type !== 'group')
         .map(b => `(${b.prompt}:${b.weight})`)
         .join(', ')
       navigator.clipboard.writeText(text)
@@ -100,60 +99,49 @@ export default {
       Object.assign(this.selectedBlock, updated)
     },
     deleteBlock(block) {
-      this.blocks = this.blocks.filter(b => b !== block);
-      this.selectedBlock = null;
+      this.blocks = this.blocks.filter(b => b !== block)
+      this.selectedBlock = null
     },
     updatePosition(index, x, y) {
       this.blocks[index].x = x
       this.blocks[index].y = y
     },
-    updateGroup(groupId, childrenList) {
-      const group = this.blocks.find(b => b.id === groupId)
-      if (group) group.children = [...childrenList]
-    },
     onRemoveChild(prompt) {
       const exists = this.blocks.some(b => b.type === 'prompt' && b.prompt === prompt);
       if (!exists) {
-        this.addBlock({
-          type: 'prompt',
+        this.blocks.push({
+          id: 'prompt-' + Date.now(),
           prompt,
-          weight: 1.0,
+          type: 'prompt',
           x: 100,
           y: 100,
-          id: 'prompt-' + Date.now()
+          weight: 1.0
         });
       }
     }
 
 
-
   }
-
 }
 </script>
 
 <style scoped>
-
 .main-layout {
   flex: 1;
   height: 100%;
   display: flex;
   overflow: hidden;
 }
-
 .main-layout > *:nth-child(1) {
-  width: 220px; /* ModuleLibrary 固定寬度 */
+  width: 220px;
   min-width: 200px;
 }
-
 .main-layout > *:nth-child(2) {
-  flex: 1; /* FreeCanvas 彈性填滿 */
+  flex: 1;
 }
-
 .main-layout > *:nth-child(3) {
-  width: 260px; /* DetailPanel 固定寬度 */
+  width: 260px;
   min-width: 240px;
-  border-left: 1px solid var(--block-border); /* 可選，視覺分隔 */
+  border-left: 1px solid var(--block-border);
 }
-
 </style>
