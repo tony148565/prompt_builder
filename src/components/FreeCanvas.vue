@@ -10,8 +10,10 @@
       <div class="block-content">
         <div v-if="block.type === 'group'">
           <strong>{{ block.groupName }}</strong>
-          <small>({{ block.groupType }})</small>
+          <!-- 可選：顯示為 Tooltip 或 Icon -->
+          <!--<span v-if="block.groupType === 'merge'" title="拼裝群組">🧩</span>-->
         </div>
+
         <div v-else>
           {{ block.prompt }} ({{ block.weight }})
         </div>
@@ -41,11 +43,35 @@ export default {
   },
   methods: {
     blockStyle(block) {
+      const basePadding = 40;
+      const charWidth = 8;
+      const minWidth = 80;
+      const maxWidth = 320;
+
+      const lineHeight = 22;
+      const maxCharsPerLine = 24;
+      const minHeight = 50;
+      const maxHeight = 180;
+
+      let width = block.width || 120;
+      let height = block.height || 'auto';
+
+      if (block.type === 'group' && block.groupType === 'merge') {
+        // 計算寬度
+        const estimatedWidth = block.groupName.length * charWidth + basePadding;
+        width = Math.min(Math.max(estimatedWidth, minWidth), maxWidth);
+
+        // 計算行數與高度
+        const numLines = Math.ceil(block.groupName.length / maxCharsPerLine);
+        const estimatedHeight = numLines * lineHeight;
+        height = Math.min(Math.max(estimatedHeight, minHeight), maxHeight);
+      }
+
       return {
         left: block.x + 'px',
         top: block.y + 'px',
-        width: block.width ? block.width + 'px' : 'auto',
-        height: block.height ? block.height + 'px' : 'auto'
+        width: width + 'px',
+        height: typeof height === 'number' ? height + 'px' : height
       };
     },
     select(block, event) {
@@ -82,13 +108,19 @@ export default {
         if (this.isInside(draggedBlock, group)) {
           const exists = group.children.some(c => c.prompt === draggedBlock.prompt);
           if (!exists) {
-            group.children.push({ prompt: draggedBlock.prompt }); // ✅ only prompt
-            this.blocks.splice(draggedIndex, 1); // ❌ destroy original
-            addedToGroup = true;
+            group.children.push({ prompt: draggedBlock.prompt });
+
+            // ✅ 如果是 merge 群組，自動組合 groupName
+            if (group.groupType === 'merge') {
+              group.groupName = group.children.map(c => c.prompt).join(' ');
+            }
+
+            this.blocks.splice(draggedIndex, 1);
           }
           break;
         }
       }
+
 
       this.draggingId = null;
     },
@@ -125,7 +157,8 @@ export default {
   border-color: var(--selected-border);
 }
 .block-content {
-  font-size: 0.95em;
-  color: var(--text-color);
+  word-break: break-word;
+  white-space: normal;
 }
+
 </style>

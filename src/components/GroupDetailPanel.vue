@@ -33,6 +33,12 @@
       </ul>
     </div>
 
+    <!-- 合併預覽 -->
+    <div v-if="localBlock.groupType === 'merge'" class="form-group">
+      <label>合併預覽</label>
+      <p style="font-weight: bold">{{ localBlock.groupName }}</p>
+    </div>
+
     <button @click="save">儲存</button>
   </div>
 </template>
@@ -53,17 +59,24 @@ export default {
     },
     removeChild(child) {
       this.localBlock.children = this.localBlock.children.filter(c => c.prompt !== child.prompt);
+      this.updateMergeGroupName(); // 👈 加這行，保證名稱同步
       this.emitUpdate();
-      this.$emit('remove-child', child.prompt); // ✅ only prompt
+      this.$emit('remove-child', child.prompt);
     },
     emitUpdate() {
       this.$emit('update', this.localBlock);
+    },
+    updateMergeGroupName() {
+      if (this.localBlock.groupType === 'merge') {
+        this.localBlock.groupName = this.localBlock.children.map(c => c.prompt).join(' ');
+      }
     },
     moveUp(index) {
       if (index > 0) {
         const tmp = this.localBlock.children[index];
         this.localBlock.children.splice(index, 1);
         this.localBlock.children.splice(index - 1, 0, tmp);
+        this.updateMergeGroupName();
         this.emitUpdate();
       }
     },
@@ -72,19 +85,19 @@ export default {
         const tmp = this.localBlock.children[index];
         this.localBlock.children.splice(index, 1);
         this.localBlock.children.splice(index + 1, 0, tmp);
+        this.updateMergeGroupName();
         this.emitUpdate();
       }
     },
     onChildEdit() {
-      if (this.localBlock.groupType === 'merge') {
-        this.localBlock.groupName = this.localBlock.children.map(c => c.prompt).join(' ');
-      }
+      this.updateMergeGroupName();
       this.emitUpdate();
     }
   },
   watch: {
     block(newBlock) {
       this.localBlock = JSON.parse(JSON.stringify(newBlock));
+      this.updateMergeGroupName(); // 👈 保證初始化也更新
     }
   }
 };
