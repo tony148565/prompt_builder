@@ -11,7 +11,14 @@
     <div class="main-layout">
       <ModuleLibrary @add-block="addBlock" />
       <FreeCanvas :blocks="blocks" @select="selectBlock" @update-position="updatePosition" />
-      <DetailPanel :block="selectedBlock" @update="updateBlock" @delete-block="deleteBlock"/>
+      <DetailPanel
+        :block="selectedBlock"
+        :all-blocks="blocks"
+        @update="updateBlock"
+        @delete-block="deleteBlock"
+        @remove-child="onRemoveChild"
+      />
+
     </div>
   </div>
 </template>
@@ -103,7 +110,22 @@ export default {
     updateGroup(groupId, childrenList) {
       const group = this.blocks.find(b => b.id === groupId)
       if (group) group.children = [...childrenList]
+    },
+    onRemoveChild(prompt) {
+      const exists = this.blocks.some(b => b.type === 'prompt' && b.prompt === prompt);
+      if (!exists) {
+        this.addBlock({
+          type: 'prompt',
+          prompt,
+          weight: 1.0,
+          x: 100,
+          y: 100,
+          id: 'prompt-' + Date.now()
+        });
+      }
     }
+
+
 
   }
 
