@@ -11,7 +11,7 @@
     <div class="main-layout">
       <ModuleLibrary @add-block="addBlock" />
       <FreeCanvas :blocks="blocks" @select="selectBlock" @update-position="updatePosition" />
-      <DetailPanel :block="selectedBlock" @update="updateBlock" />
+      <DetailPanel :block="selectedBlock" @update="updateBlock" @delete-block="deleteBlock"/>
     </div>
   </div>
 </template>
@@ -62,12 +62,29 @@ export default {
       this.blocks = []
     },
     exportPrompt() {
-      const text = this.blocks.map(b => `(${b.prompt}:${b.weight})`).join(', ')
+      const text = this.blocks
+        .filter(b => b.type !== 'group') // 只匯出 prompt block
+        .map(b => `(${b.prompt}:${b.weight})`)
+        .join(', ')
       navigator.clipboard.writeText(text)
       alert('已複製 prompt：\n' + text)
     },
     addBlock(block) {
-      this.blocks.push({ ...block, x: 100, y: 100, weight: 1.0 })
+      if (block.type === 'group') {
+        const group = {
+          ...block,
+          id: 'group-' + Date.now(),
+          x: block.x || 100,
+          y: block.y || 100,
+          width: block.width || 200,
+          height: block.height || 120,
+          children: [],
+          groupName: block.groupName || '未命名群組'
+        }
+        this.blocks.push(group)
+      } else {
+        this.blocks.push({ ...block, x: 100, y: 100, weight: 1.0 })
+      }
     },
     selectBlock(block) {
       this.selectedBlock = block
@@ -75,11 +92,21 @@ export default {
     updateBlock(updated) {
       Object.assign(this.selectedBlock, updated)
     },
+    deleteBlock(block) {
+      this.blocks = this.blocks.filter(b => b !== block);
+      this.selectedBlock = null;
+    },
     updatePosition(index, x, y) {
       this.blocks[index].x = x
       this.blocks[index].y = y
+    },
+    updateGroup(groupId, childrenList) {
+      const group = this.blocks.find(b => b.id === groupId)
+      if (group) group.children = [...childrenList]
     }
+
   }
+
 }
 </script>
 

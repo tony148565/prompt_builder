@@ -1,0 +1,8 @@
+{
+    "type":"姿勢",
+    "items":[
+        { "prompt": "sitting" },
+        { "prompt": "running" },
+        { "prompt": "jumping" }
+    ]
+}

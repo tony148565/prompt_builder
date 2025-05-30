@@ -9,7 +9,13 @@
       <label>權重</label>
       <input type="number" step="0.1" v-model.number="editableBlock.weight" />
     </div>
+    <div class="form-group">
+      <label>群組（可空白）</label>
+      <input type="text" v-model="editableBlock.group" />
+    </div>
+
     <button @click="applyChanges">✔ 套用變更</button>
+    <button @click="deleteThis" class="danger">🗑 刪除模組</button>
   </aside>
 </template>
 
@@ -17,7 +23,7 @@
 export default {
   name: 'DetailPanel',
   props: ['block'],
-  emits: ['update'],
+  emits: ['update', 'delete-block'],
   data() {
     return {
       editableBlock: null
@@ -34,6 +40,9 @@ export default {
   methods: {
     applyChanges() {
       this.$emit('update', this.editableBlock)
+    },
+    deleteThis() {
+      this.$emit('delete-block', this.block)
     }
   }
 }
@@ -49,21 +58,10 @@ export default {
   border-left: 1px solid var(--block-border);
   overflow-y: auto;
 }
-
-h3 {
-  font-size: 1.1em;
-  margin-bottom: 1em;
-  font-weight: 600;
-  border-bottom: 1px solid var(--block-border);
-  padding-bottom: 0.5em;
-}
-
 .form-group {
   margin-bottom: 1em;
 }
-
-input[type="text"],
-input[type="number"] {
+input {
   width: 100%;
   padding: 0.4em;
   border: 1px solid var(--block-border);
@@ -72,21 +70,23 @@ input[type="number"] {
   background-color: var(--bg-block);
   color: var(--text-color);
 }
-
 button {
   width: 100%;
   padding: 0.5em 1em;
+  margin-top: 0.5em;
   background-color: #4caf50;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.2s;
 }
-
 button:hover {
   background-color: #45a049;
 }
+button.danger {
+  background-color: #c0392b;
+}
+button.danger:hover {
+  background-color: #e74c3c;
+}
 </style>
-

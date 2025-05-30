@@ -1,0 +1,8 @@
+{
+    "type": "顏色",
+    "items": [
+        { "prompt": "red" },
+        { "prompt": "blue" },
+        { "prompt": "pink" }
+    ]
+}
