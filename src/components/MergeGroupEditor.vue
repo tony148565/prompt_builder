@@ -2,17 +2,16 @@
   <div class="form-group">
     <label>包含的模組</label>
     <ul>
-      <li v-for="(child, index) in localChildren" :key="child.prompt">
-        <input
-          type="text"
-          v-model="child.prompt"
-          @input="emitUpdate"
-        />
-        <button @click="moveUp(index)" :disabled="index === 0">⬆️</button>
-        <button @click="moveDown(index)" :disabled="index === localChildren.length - 1">⬇️</button>
-        <button class="remove-btn" @click="removeChild(index)">❌</button>
+      <li v-for="(child, index) in localChildren" :key="child.id" class="child-item">
+        {{ child.prompt }} ({{ child.weight ?? 1.0 }})
+        <div class="controls">
+          <button @click="moveUp(index)" :disabled="index === 0">⬆️</button>
+          <button @click="moveDown(index)" :disabled="index === localChildren.length - 1">⬇️</button>
+          <button class="remove-btn" @click="removeChild(index)">❌</button>
+        </div>
       </li>
     </ul>
+
     <div class="form-group">
       <label>合併預覽</label>
       <p style="font-weight: bold">{{ mergedPrompt }}</p>
@@ -24,7 +23,7 @@
 export default {
   name: 'MergeGroupEditor',
   props: ['modelValue'],
-  emits: ['update:modelValue', 'update'],
+  emits: ['update:modelValue', 'update', 'restore-block'],  // ✅ 補上這行
   computed: {
     localChildren: {
       get() {
@@ -43,24 +42,32 @@ export default {
       this.$emit('update');
     },
     moveUp(index) {
-      const tmp = this.localChildren[index];
-      this.localChildren.splice(index, 1);
-      this.localChildren.splice(index - 1, 0, tmp);
+      const arr = [...this.localChildren];
+      const tmp = arr[index];
+      arr.splice(index, 1);
+      arr.splice(index - 1, 0, tmp);
+      this.localChildren = arr;
       this.emitUpdate();
     },
     moveDown(index) {
-      const tmp = this.localChildren[index];
-      this.localChildren.splice(index, 1);
-      this.localChildren.splice(index + 1, 0, tmp);
+      const arr = [...this.localChildren];
+      const tmp = arr[index];
+      arr.splice(index, 1);
+      arr.splice(index + 1, 0, tmp);
+      this.localChildren = arr;
       this.emitUpdate();
     },
     removeChild(index) {
-      this.localChildren.splice(index, 1);
-      this.emitUpdate();
+      const arr = [...this.localChildren];
+      const removed = arr.splice(index, 1)[0];
+      this.localChildren = arr;
+      this.emitUpdate(); // ✅ 更新本地 + 通知上層更新
+      this.$emit('restore-block', removed); // ✅ 發射給 GroupDetailPanel
     }
   }
 };
 </script>
+
 
 <style scoped>
 ul {
@@ -69,15 +76,16 @@ ul {
 }
 li {
   margin-bottom: 0.5em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #2a2a2a;
+  padding: 0.5em;
+  border-radius: 4px;
 }
-input[type="text"] {
-  width: 100%;
-  padding: 0.4em;
-  margin-bottom: 0.2em;
-}
-button {
+.controls button {
   padding: 0.3em 0.5em;
-  margin-right: 0.2em;
+  margin-left: 0.2em;
   background-color: #4caf50;
   color: white;
   border: none;
@@ -85,13 +93,13 @@ button {
   cursor: pointer;
   font-size: 0.8em;
 }
-button:hover {
+.controls button:hover {
   background-color: #45a049;
 }
-.remove-btn {
+.controls .remove-btn {
   background-color: #c0392b;
 }
-.remove-btn:hover {
+.controls .remove-btn:hover {
   background-color: #e74c3c;
 }
 </style>

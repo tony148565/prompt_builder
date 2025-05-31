@@ -33,6 +33,7 @@
       v-if="localBlock.groupType === 'merge'"
       v-model="localBlock.children"
       @update="emitUpdate"
+      @restore-block="handleRestore"  
     />
     <LogicGroupEditor
       v-if="localBlock.groupType === 'logic'"
@@ -77,8 +78,19 @@ export default {
   watch: {
     block(newBlock) {
       this.localBlock = JSON.parse(JSON.stringify(newBlock));
+    },
+    'localBlock.children': {
+      handler(newChildren) {
+        if (this.localBlock.groupType === 'merge') {
+          const newName = newChildren.map(c => c.prompt).join(' ');
+          this.localBlock.groupName = newName;
+          this.emitUpdate(); // 通知上層更新
+        }
+      },
+      deep: true
     }
   }
+
 };
 </script>
 

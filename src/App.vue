@@ -17,7 +17,7 @@
         @update="updateBlock"
         @delete-block="deleteBlock"
         @remove-child="onRemoveChild"
-        @restore-block="restoreToCanvas"
+        @restore-block="restoreToCanvas" 
       />
 
     </div>
@@ -135,6 +135,7 @@ export default {
         });
       }
     }
+
 
 
   }
