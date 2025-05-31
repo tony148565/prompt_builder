@@ -1,22 +1,49 @@
 <template>
   <div class="canvas" @mousedown="startDrag" @mousemove="onDrag" @mouseup="endDrag">
+    <!-- Merge Groups -->
     <div
-      v-for="(block, i) in blocks"
+      v-for="group in mergeGroups"
+      :key="group.id"
+      :class="['block', 'group', 'merge', { selected: group.id === selectedBlock?.id }]"
+      :style="blockStyle(group)"
+      @mousedown.stop="select(group, $event)"
+    >
+      <div class="block-content">
+        <strong>{{ group.groupName }}</strong>
+      </div>
+    </div>
+
+    <!-- Logic Groups -->
+    <div
+      v-for="group in logicGroups"
+      :key="group.id"
+      :class="['block', 'group', 'logic', { selected: group.id === selectedBlock?.id }]"
+      :style="blockStyle(group)"
+      @mousedown.stop="select(group, $event)"
+    >
+      <div class="block-content">
+        <strong>{{ group.groupName }}</strong>
+        <div
+          v-if="group.children?.length"
+          v-for="child in group.children"
+          :key="child.id"
+          class="embedded-block"
+        >
+          {{ findBlock(child.id)?.prompt || '(未知)' }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Normal Prompt Blocks -->
+    <div
+      v-for="block in promptBlocks"
       :key="block.id"
-      :class="['block', block.type, { selected: block.id === selectedBlock?.id }]"
+      :class="['block', { selected: block.id === selectedBlock?.id }]"
       :style="blockStyle(block)"
       @mousedown.stop="select(block, $event)"
     >
       <div class="block-content">
-        <div v-if="block.type === 'group'">
-          <strong>{{ block.groupName }}</strong>
-          <!-- 可選：顯示為 Tooltip 或 Icon -->
-          <!--<span v-if="block.groupType === 'merge'" title="拼裝群組">🧩</span>-->
-        </div>
-
-        <div v-else>
-          {{ block.prompt }} ({{ block.weight }})
-        </div>
+        {{ block.prompt }} ({{ block.weight }})
       </div>
     </div>
   </div>
@@ -37,8 +64,15 @@ export default {
     };
   },
   computed: {
-    groupBlocks() {
-      return this.blocks.filter(b => b.type === 'group');
+    mergeGroups() {
+      return this.blocks.filter(b => b.type === 'group' && b.groupType === 'merge');
+    },
+    logicGroups() {
+      return this.blocks.filter(b => b.type === 'group' && b.groupType === 'logic');
+    },
+    promptBlocks() {
+      const logicChildrenIds = this.logicGroups.flatMap(g => g.children?.map(c => c.id) || []);
+      return this.blocks.filter(b => b.type !== 'group' && !logicChildrenIds.includes(b.id));
     }
   },
   methods: {
@@ -57,14 +91,16 @@ export default {
       let height = block.height || 'auto';
 
       if (block.type === 'group' && block.groupType === 'merge') {
-        // 計算寬度
         const estimatedWidth = block.groupName.length * charWidth + basePadding;
         width = Math.min(Math.max(estimatedWidth, minWidth), maxWidth);
-
-        // 計算行數與高度
         const numLines = Math.ceil(block.groupName.length / maxCharsPerLine);
         const estimatedHeight = numLines * lineHeight;
         height = Math.min(Math.max(estimatedHeight, minHeight), maxHeight);
+      }
+
+      if (block.type === 'group' && block.groupType === 'logic') {
+        width = block.width || 280;
+        height = block.height || 160;
       }
 
       return {
@@ -95,43 +131,59 @@ export default {
     },
     endDrag() {
       if (!this.draggingId) return;
+
       const draggedIndex = this.blocks.findIndex(b => b.id === this.draggingId);
       if (draggedIndex === -1) return;
+
       const draggedBlock = this.blocks[draggedIndex];
       if (!draggedBlock || draggedBlock.type === 'group') {
         this.draggingId = null;
         return;
       }
 
-      let addedToGroup = false;
-      for (const group of this.groupBlocks) {
+      // Handle Merge Groups
+      for (const group of this.mergeGroups) {
         if (this.isInside(draggedBlock, group)) {
           const exists = group.children.some(c => c.prompt === draggedBlock.prompt);
           if (!exists) {
             group.children.push({ prompt: draggedBlock.prompt });
-
-            // ✅ 如果是 merge 群組，自動組合 groupName
-            if (group.groupType === 'merge') {
-              group.groupName = group.children.map(c => c.prompt).join(' ');
-            }
-
+            group.groupName = group.children.map(c => c.prompt).join(' ');
             this.blocks.splice(draggedIndex, 1);
           }
-          break;
+          this.draggingId = null;
+          return;
         }
       }
 
+      // Handle Logic Groups
+      for (const group of this.logicGroups) {
+        if (this.isInside(draggedBlock, group)) {
+          if (!group.children) this.$set(group, 'children', []);
+          const exists = group.children.some(c => c.id === draggedBlock.id);
+          if (!exists) {
+            group.children.push({ id: draggedBlock.id });
+            // 不再 splice block，改由 computed 的 promptBlocks 過濾顯示
+          }
+          this.draggingId = null;
+          return;
+        }
+      }
 
       this.draggingId = null;
     },
     isInside(block, group) {
       const padding = 10;
+      const gw = group.width || 280;
+      const gh = group.height || 160;
       return (
         block.x + 100 > group.x - padding &&
-        block.x < group.x + group.width + padding &&
+        block.x < group.x + gw + padding &&
         block.y + 60 > group.y - padding &&
-        block.y < group.y + group.height + padding
+        block.y < group.y + gh + padding
       );
+    },
+    findBlock(id) {
+      return this.blocks.find(b => b.id === id);
     }
   }
 };
@@ -152,6 +204,7 @@ export default {
   border-radius: 6px;
   box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
   cursor: grab;
+  color: var(--text-color);
 }
 .block.selected {
   border-color: var(--selected-border);
@@ -160,5 +213,12 @@ export default {
   word-break: break-word;
   white-space: normal;
 }
-
+.embedded-block {
+  font-size: 12px;
+  margin-left: 10px;
+  margin-top: 4px;
+  padding-left: 6px;
+  border-left: 2px dotted #aaa;
+  color: var(--text-color);
+}
 </style>

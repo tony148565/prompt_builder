@@ -17,37 +17,32 @@
       <p>{{ localBlock.groupType === 'merge' ? '拼裝群組' : '邏輯群組' }}</p>
     </div>
 
-    <div class="form-group">
-      <label>包含的模組</label>
-      <ul>
-        <li v-for="(child, index) in localBlock.children" :key="child.prompt">
-          <input
-            type="text"
-            v-model="child.prompt"
-            @input="onChildEdit"
-          />
-          <button @click="moveUp(index)" :disabled="index === 0">⬆️</button>
-          <button @click="moveDown(index)" :disabled="index === localBlock.children.length - 1">⬇️</button>
-          <button class="remove-btn" @click="removeChild(child)">❌</button>
-        </li>
-      </ul>
-    </div>
-
-    <!-- 合併預覽 -->
-    <div v-if="localBlock.groupType === 'merge'" class="form-group">
-      <label>合併預覽</label>
-      <p style="font-weight: bold">{{ localBlock.groupName }}</p>
-    </div>
+    <!-- 分派子元件 -->
+    <MergeGroupEditor
+      v-if="localBlock.groupType === 'merge'"
+      v-model="localBlock.children"
+      @update="emitUpdate"
+    />
+    <LogicGroupEditor
+      v-else
+      v-model="localBlock.children"
+      :all-blocks="allBlocks"
+      @update="emitUpdate"
+    />
 
     <button @click="save">儲存</button>
   </div>
 </template>
 
 <script>
+import MergeGroupEditor from './MergeGroupEditor.vue';
+import LogicGroupEditor from './LogicGroupEditor.vue';
+
 export default {
   name: 'GroupDetailPanel',
   props: ['block', 'allBlocks'],
-  emits: ['save', 'update', 'remove-child'],
+  components: { MergeGroupEditor, LogicGroupEditor },
+  emits: ['save', 'update'],
   data() {
     return {
       localBlock: JSON.parse(JSON.stringify(this.block))
@@ -57,47 +52,13 @@ export default {
     save() {
       this.$emit('save', this.localBlock);
     },
-    removeChild(child) {
-      this.localBlock.children = this.localBlock.children.filter(c => c.prompt !== child.prompt);
-      this.updateMergeGroupName(); // 👈 加這行，保證名稱同步
-      this.emitUpdate();
-      this.$emit('remove-child', child.prompt);
-    },
     emitUpdate() {
       this.$emit('update', this.localBlock);
-    },
-    updateMergeGroupName() {
-      if (this.localBlock.groupType === 'merge') {
-        this.localBlock.groupName = this.localBlock.children.map(c => c.prompt).join(' ');
-      }
-    },
-    moveUp(index) {
-      if (index > 0) {
-        const tmp = this.localBlock.children[index];
-        this.localBlock.children.splice(index, 1);
-        this.localBlock.children.splice(index - 1, 0, tmp);
-        this.updateMergeGroupName();
-        this.emitUpdate();
-      }
-    },
-    moveDown(index) {
-      if (index < this.localBlock.children.length - 1) {
-        const tmp = this.localBlock.children[index];
-        this.localBlock.children.splice(index, 1);
-        this.localBlock.children.splice(index + 1, 0, tmp);
-        this.updateMergeGroupName();
-        this.emitUpdate();
-      }
-    },
-    onChildEdit() {
-      this.updateMergeGroupName();
-      this.emitUpdate();
     }
   },
   watch: {
     block(newBlock) {
       this.localBlock = JSON.parse(JSON.stringify(newBlock));
-      this.updateMergeGroupName(); // 👈 保證初始化也更新
     }
   }
 };
@@ -124,7 +85,7 @@ input[type="text"] {
 }
 button {
   padding: 0.3em 0.5em;
-  margin-right: 0.2em;
+  margin-top: 0.5em;
   background-color: #4caf50;
   color: white;
   border: none;
@@ -134,12 +95,5 @@ button {
 }
 button:hover {
   background-color: #45a049;
-}
-.remove-btn {
-  background-color: #c0392b;
-  color: white;
-}
-.remove-btn:hover {
-  background-color: #e74c3c;
 }
 </style>

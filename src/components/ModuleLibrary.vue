@@ -11,7 +11,7 @@
         class="block-item"
         v-for="(block, i) in filteredModules"
         :key="block.id"
-        @click="$emit('add-block', block)"
+        @click="$emit('add-block', cloneBlock(block))"
       >
         {{ block.prompt }}
       </div>
@@ -24,6 +24,8 @@
 </template>
 
 <script>
+import { nanoid } from 'nanoid';
+
 export default {
   name: 'ModuleLibrary',
   data() {
@@ -52,7 +54,7 @@ export default {
       }
       const json = await res.json();
       return json.items.map(entry => ({
-        id: `block-${Date.now()}-${Math.random()}`,
+        id: nanoid(),
         prompt: entry.prompt,
         type: json.type,
         weight: 1.0,
@@ -71,9 +73,17 @@ export default {
         console.error('載入模組索引失敗', err);
       }
     },
+    cloneBlock(block) {
+      return {
+        ...block,
+        id: nanoid(),
+        x: 100,
+        y: 100
+      };
+    },
     addEmptyGroup(groupType) {
       this.$emit('add-block', {
-        id: `group-${Date.now()}-${this.groupIdCounter++}`,
+        id: `group-${nanoid()}`,
         type: 'group',
         groupType,
         groupName: `${groupType.toUpperCase()} GROUP`,
