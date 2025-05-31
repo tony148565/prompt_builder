@@ -11,6 +11,17 @@
         @input="emitUpdate"
       />
     </div>
+    <div class="form-group" v-if="localBlock.groupType === 'merge'">
+      <label>群組權重</label>
+      <input
+        type="number"
+        step="0.1"
+        min="0"
+        v-model.number="localBlock.groupWeight"
+        @input="emitUpdate"
+      />
+    </div>
+
 
     <div class="form-group">
       <label>群組類型</label>
@@ -24,11 +35,14 @@
       @update="emitUpdate"
     />
     <LogicGroupEditor
-      v-else
-      v-model="localBlock.children"
-      :all-blocks="allBlocks"
+      v-if="localBlock.groupType === 'logic'"
+      :modelValue="localBlock.children"
+      :allBlocks="allBlocks"
+      @update:modelValue="emitUpdate"
       @update="emitUpdate"
+      @restore-block="handleRestore"
     />
+
 
     <button @click="save">儲存</button>
   </div>
@@ -42,7 +56,7 @@ export default {
   name: 'GroupDetailPanel',
   props: ['block', 'allBlocks'],
   components: { MergeGroupEditor, LogicGroupEditor },
-  emits: ['save', 'update'],
+  emits: ['save', 'update', 'restore-block'],
   data() {
     return {
       localBlock: JSON.parse(JSON.stringify(this.block))
@@ -50,10 +64,14 @@ export default {
   },
   methods: {
     save() {
+      this.emitUpdate(); // 確保同步資料更新
       this.$emit('save', this.localBlock);
     },
     emitUpdate() {
       this.$emit('update', this.localBlock);
+    },
+    handleRestore(block) {
+      this.$emit('restore-block', block); // ✅ 向上轉交 restore-block 事件
     }
   },
   watch: {
@@ -63,6 +81,7 @@ export default {
   }
 };
 </script>
+
 
 <style scoped>
 .detail-panel {

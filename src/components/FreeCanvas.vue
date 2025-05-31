@@ -9,7 +9,8 @@
       @mousedown.stop="select(group, $event)"
     >
       <div class="block-content">
-        <strong>{{ group.groupName }}</strong>
+        <strong>{{ group.groupName }}</strong><br />
+        <small>(weight: {{ group.groupWeight ?? 1.0 }})</small>
       </div>
     </div>
 
@@ -29,14 +30,14 @@
           :key="child.id"
           class="embedded-block"
         >
-          {{ findBlock(child.id)?.prompt || '(未知)' }}
+          {{ child.prompt || findBlock(child.id)?.prompt || '(未知)' }} ({{ child.weight ?? findBlock(child.id)?.weight ?? 1.0 }})
         </div>
       </div>
     </div>
 
     <!-- Normal Prompt Blocks -->
     <div
-      v-for="block in promptBlocks"
+      v-for="block in blocks.filter(b => b.type !== 'group')"
       :key="block.id"
       :class="['block', { selected: block.id === selectedBlock?.id }]"
       :style="blockStyle(block)"
@@ -64,15 +65,14 @@ export default {
     };
   },
   computed: {
+    groupBlocks() {
+      return this.blocks.filter(b => b.type === 'group');
+    },
     mergeGroups() {
       return this.blocks.filter(b => b.type === 'group' && b.groupType === 'merge');
     },
     logicGroups() {
       return this.blocks.filter(b => b.type === 'group' && b.groupType === 'logic');
-    },
-    promptBlocks() {
-      const logicChildrenIds = this.logicGroups.flatMap(g => g.children?.map(c => c.id) || []);
-      return this.blocks.filter(b => b.type !== 'group' && !logicChildrenIds.includes(b.id));
     }
   },
   methods: {
@@ -141,12 +141,15 @@ export default {
         return;
       }
 
-      // Handle Merge Groups
       for (const group of this.mergeGroups) {
         if (this.isInside(draggedBlock, group)) {
           const exists = group.children.some(c => c.prompt === draggedBlock.prompt);
           if (!exists) {
-            group.children.push({ prompt: draggedBlock.prompt });
+            group.children.push({
+              id: draggedBlock.id,
+              prompt: draggedBlock.prompt,
+              weight: draggedBlock.weight
+            });
             group.groupName = group.children.map(c => c.prompt).join(' ');
             this.blocks.splice(draggedIndex, 1);
           }
@@ -155,14 +158,26 @@ export default {
         }
       }
 
-      // Handle Logic Groups
       for (const group of this.logicGroups) {
         if (this.isInside(draggedBlock, group)) {
           if (!group.children) this.$set(group, 'children', []);
-          const exists = group.children.some(c => c.id === draggedBlock.id);
-          if (!exists) {
-            group.children.push({ id: draggedBlock.id });
-            // 不再 splice block，改由 computed 的 promptBlocks 過濾顯示
+          const isDuplicate = group.children.some(c => {
+            return c.prompt === draggedBlock.prompt || this.findBlock(c.id)?.prompt === draggedBlock.prompt;
+          });
+          if (!isDuplicate) {
+            group.children.push({
+              id: draggedBlock.id,
+              prompt: draggedBlock.prompt,
+              weight: draggedBlock.weight ?? 1.0
+            });
+            const padding = 40;
+            const lineHeight = 24;
+            const baseHeight = 60;
+            const longestPrompt = Math.max(...group.children.map(c => c.prompt.length));
+            const estimatedWidth = longestPrompt * 8 + padding;
+            group.width = Math.max(estimatedWidth, 200);
+            group.height = baseHeight + group.children.length * lineHeight;
+            this.blocks.splice(draggedIndex, 1);
           }
           this.draggingId = null;
           return;

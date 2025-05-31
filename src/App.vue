@@ -17,7 +17,9 @@
         @update="updateBlock"
         @delete-block="deleteBlock"
         @remove-child="onRemoveChild"
+        @restore-block="restoreToCanvas"
       />
+
     </div>
   </div>
 </template>
@@ -85,11 +87,12 @@ export default {
           width: block.width || 200,
           height: block.height || 120,
           children: [],
-          groupName: block.groupName || '未命名群組'
-        }
-        this.blocks.push(group)
+          groupName: block.groupName || '未命名群組',
+          groupWeight: 1.0  // ← 加入這行
+        };
+        this.blocks.push(group);
       } else {
-        this.blocks.push({ ...block, x: 100, y: 100, weight: 1.0 })
+        this.blocks.push({ ...block, x: 100, y: 100, weight: 1.0 });
       }
     },
     selectBlock(block) {
@@ -116,6 +119,19 @@ export default {
           x: 100,
           y: 100,
           weight: 1.0
+        });
+      }
+    },
+    restoreToCanvas(block) {
+      const exists = this.blocks.some(b => b.id === block.id);
+      if (!exists) {
+        this.blocks.push({
+          id: block.id,
+          prompt: block.prompt,
+          type: 'prompt',
+          x: 100,
+          y: 100,
+          weight: block.weight ?? 1.0
         });
       }
     }
